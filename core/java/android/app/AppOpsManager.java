@@ -267,7 +267,9 @@ public class AppOpsManager {
     /** @hide */
     public static final int OP_SU = 69;
     /** @hide */
-    public static final int _NUM_OP = 70;
+    public static final int OP_ALARM_WAKEUP = 70;
+    /** @hide */
+    public static final int _NUM_OP = 71;
 
     /** Access to coarse location information. */
     public static final String OPSTR_COARSE_LOCATION = "android:coarse_location";
@@ -378,6 +380,8 @@ public class AppOpsManager {
             "android:data_connect_change";
     private static final String OPSTR_SU =
             "android:su";
+    private static final String OPSTR_ALARM_WAKEUP =
+            "android:alarm_wakeup";
 
     private static final int[] RUNTIME_PERMISSIONS_OPS = {
             // Contacts
@@ -494,7 +498,8 @@ public class AppOpsManager {
             OP_BOOT_COMPLETED,
             OP_NFC_CHANGE,
             OP_DATA_CONNECT_CHANGE,
-            OP_SU
+            OP_SU,
+            OP_ALARM_WAKEUP
     };
 
     /**
@@ -572,6 +577,7 @@ public class AppOpsManager {
             OPSTR_NFC_CHANGE,
             OPSTR_DATA_CONNECT_CHANGE,
             OPSTR_SU,
+            null,
     };
 
     /**
@@ -649,6 +655,7 @@ public class AppOpsManager {
             "NFC_CHANGE",
             "DATA_CONNECT_CHANGE",
             "SU",
+            "ALARM_WAKEUP",
     };
 
     /**
@@ -726,6 +733,7 @@ public class AppOpsManager {
             Manifest.permission.NFC,
             Manifest.permission.MODIFY_PHONE_STATE,
             null,
+            null, // OP_ALARM_WAKEUP
     };
 
     /**
@@ -804,6 +812,7 @@ public class AppOpsManager {
             null, //NFC_CHANGE
             null, //DATA_CONNECT_CHANGE
             UserManager.DISALLOW_SU, //SU TODO: this should really be investigated.
+            null, //ALARM_WAKEUP
     };
 
     /**
@@ -881,6 +890,7 @@ public class AppOpsManager {
             true, // NFC_CHANGE
             true, //DATA_CONNECT_CHANGE
             false, //SU
+            true, //ALARM_WAKEUP
     };
 
     /**
@@ -957,6 +967,7 @@ public class AppOpsManager {
             AppOpsManager.MODE_ALLOWED, // OP_NFC_CHANGE
             AppOpsManager.MODE_ALLOWED,
             AppOpsManager.MODE_ASK, // OP_SU
+            AppOpsManager.MODE_ALLOWED, // OP_ALARM_WAKEUP
     };
 
     /**
@@ -1034,6 +1045,7 @@ public class AppOpsManager {
             AppOpsManager.MODE_ASK,     // OP_NFC_CHANGE
             AppOpsManager.MODE_ASK,     // OP_DATA_CONNECT_CHANGE
             AppOpsManager.MODE_ASK,     // OP_SU
+            AppOpsManager.MODE_ALLOWED, // OP_ALARM_WAKEUP
     };
 
     /**
@@ -1110,6 +1122,7 @@ public class AppOpsManager {
         true,     // OP_NFC_CHANGE
         true,     // OP_DATA_CONNECT_CHANGE
         true,     // OP_SU
+        false,    // OP_ALARM_WAKEUP
     };
 
     /**
@@ -1190,6 +1203,7 @@ public class AppOpsManager {
             false,     // OP_NFC_CHANGE
             false,     // OP_DATA_CONNECT_CHANGE
             false,     // OP_SU
+            false,     // OP_ALARM_WAKEUP
     };
 
     /**

@@ -1119,6 +1119,25 @@ class AlarmManagerService extends SystemService {
             maxElapsed = triggerElapsed + windowLength;
         }
 
+        boolean wakeupFiltered = false;
+        if (operation != null &&
+                operation.getCreatorUid() >= Process.FIRST_APPLICATION_UID &&
+                (type == AlarmManager.RTC_WAKEUP
+                        || type == AlarmManager.ELAPSED_REALTIME_WAKEUP)
+                && mAppOps.checkOpNoThrow(AppOpsManager.OP_ALARM_WAKEUP,
+                        operation.getCreatorUid(),
+                        operation.getCreatorPackage())
+                != AppOpsManager.MODE_ALLOWED) {
+
+            if (type == AlarmManager.RTC_WAKEUP) {
+                type = AlarmManager.RTC;
+            } else {
+                type = AlarmManager.ELAPSED_REALTIME;
+            }
+
+            wakeupFiltered = true;
+        }
+
         synchronized (mLock) {
             if (DEBUG_BATCH) {
                 Slog.v(TAG, "set(" + operation + ") : type=" + type
@@ -1128,14 +1147,15 @@ class AlarmManagerService extends SystemService {
             }
             setImplLocked(type, triggerAtTime, triggerElapsed, windowLength, maxElapsed,
                     interval, operation, directReceiver, listenerTag, flags, true, workSource,
-                    alarmClock, callingUid, callingPackage);
+                    alarmClock, callingUid, callingPackage, wakeupFiltered);
         }
     }
 
     private void setImplLocked(int type, long when, long whenElapsed, long windowLength,
             long maxWhen, long interval, PendingIntent operation, IAlarmListener directReceiver,
             String listenerTag, int flags, boolean doValidate, WorkSource workSource,
-            AlarmManager.AlarmClockInfo alarmClock, int callingUid, String callingPackage) {
+            AlarmManager.AlarmClockInfo alarmClock, int callingUid, String callingPackage,
+            boolean wakeupFiltered) {
         Alarm a = new Alarm(type, when, whenElapsed, windowLength, maxWhen, interval,
                 operation, directReceiver, listenerTag, workSource, flags, alarmClock,
                 callingUid, callingPackage);
@@ -1148,7 +1168,18 @@ class AlarmManagerService extends SystemService {
             }
         } catch (RemoteException e) {
         }
-        removeLocked(operation, directReceiver);
+
+        // Remove this alarm if already scheduled.
+        final boolean foundExistingWakeup = removeWithStatusLocked(operation, directReceiver);
+
+        // note AppOp for accounting purposes
+        // skip if the alarm already existed
+        if (!foundExistingWakeup && wakeupFiltered) {
+            mAppOps.noteOpNoThrow(AppOpsManager.OP_ALARM_WAKEUP,
+                    operation.getCreatorUid(),
+                    operation.getCreatorPackage());
+        }
+
         setImplLocked(a, false, doValidate);
     }
 
@@ -1968,6 +1999,10 @@ class AlarmManagerService extends SystemService {
     }
 
     private void removeLocked(PendingIntent operation, IAlarmListener directReceiver) {
+        removeWithStatusLocked(operation, directReceiver);
+    }
+
+    private boolean removeWithStatusLocked(PendingIntent operation, IAlarmListener directReceiver) {
         boolean didRemove = false;
         for (int i = mAlarmBatches.size() - 1; i >= 0; i--) {
             Batch b = mAlarmBatches.get(i);
@@ -2013,6 +2048,8 @@ class AlarmManagerService extends SystemService {
             }
             updateNextAlarmClockLocked();
         }
+
+        return didRemove;
     }
 
     void removeLocked(String packageName) {
@@ -2290,7 +2327,7 @@ class AlarmManagerService extends SystemService {
                     setImplLocked(alarm.type, alarm.when + delta, nextElapsed, alarm.windowLength,
                             maxTriggerTime(nowELAPSED, nextElapsed, alarm.repeatInterval),
                             alarm.repeatInterval, alarm.operation, null, null, alarm.flags, true,
-                            alarm.workSource, alarm.alarmClock, alarm.uid, alarm.packageName);
+                            alarm.workSource, alarm.alarmClock, alarm.uid, alarm.packageName, false);
                 }
 
                 if (alarm.wakeup) {
@@ -3217,6 +3254,10 @@ class AlarmManagerService extends SystemService {
                     ActivityManagerNative.noteWakeupAlarm(
                             alarm.operation, alarm.uid, alarm.packageName, alarm.statsTag);
                 }
+                // AppOps accounting
+                mAppOps.noteOpNoThrow(AppOpsManager.OP_ALARM_WAKEUP,
+                        alarm.operation.getCreatorUid(),
+                        alarm.operation.getCreatorPackage());
             }
         }
     }
