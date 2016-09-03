@@ -1662,6 +1662,21 @@ public final class ActivityThread {
         return (sCurrentActivityThread != null) ? sCurrentActivityThread.mSystemThread : false;
     }
 
+    public static int isSystemApp() {
+        ApplicationInfo ai = null;
+
+        try {
+            ai = getPackageManager().getApplicationInfo(currentOpPackageName(), 0, UserHandle.myUserId());
+        } catch (RemoteException e) {
+            return -1;
+        }
+
+        if ((ai.flags & ApplicationInfo.FLAG_SYSTEM) != 0)
+            return 1;
+        else
+            return 0;
+    }
+
     public static String currentOpPackageName() {
         ActivityThread am = currentActivityThread();
         return (am != null && am.getApplication() != null)

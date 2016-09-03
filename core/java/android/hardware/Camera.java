@@ -20,6 +20,7 @@ import android.app.ActivityThread;
 import android.annotation.SdkConstant;
 import android.annotation.SdkConstant.SdkConstantType;
 import android.content.Context;
+import android.content.pm.PackageManager;
 import android.graphics.ImageFormat;
 import android.graphics.Point;
 import android.graphics.Rect;
@@ -486,7 +487,11 @@ public class Camera {
 
         String packageName = ActivityThread.currentOpPackageName();
 
-        //Force HAL1 if the package name falls in this bucket
+        // Force HAL1 for all user apps
+        if (ActivityThread.isSystemApp() == 0)
+            halVersion = CAMERA_HAL_API_VERSION_1_0;
+
+        // Force HAL1 if the package is system app and its name falls in this bucket
         String packageList = SystemProperties.get("camera.hal1.packagelist", "");
         if (packageList.length() > 0) {
             TextUtils.StringSplitter splitter = new TextUtils.SimpleStringSplitter(',');
